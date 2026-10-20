@@ -1,0 +1,13 @@
+# Cores de destaque do Azure DevOps; o tema claro/escuro segue o sistema.
+[theme.light]
+primaryColor = "#0078D4"
+
+[theme.dark]
+primaryColor = "#2899F5"
+
+[client]
+toolbarMode = "minimal"
+
+[server]
+headless = true
+runOnSave = true
