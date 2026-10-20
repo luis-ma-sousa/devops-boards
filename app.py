@@ -48,7 +48,9 @@ def onboarding() -> None:
                 st.error(str(exc))
     with right, st.container(border=True):
         st.subheader("Demo project")
-        st.write("Online Store: 4 epics, 10 features, 25 user stories, 8 bugs, ~90 tasks, 6 sprints and 7 people.")
+        st.write("Retail Data & AI: a team building store dashboards, customer analytics, demand forecasting "
+                 "and a data/ML platform. 4 epics, 10 features, 25 user stories, 8 bugs, ~90 tasks, 6 sprints "
+                 "and 8 people.")
         if st.button("Load demo", icon=":material/rocket_launch:"):
             with st.spinner("Creating data…"):
                 seed.load_demo()

@@ -23,8 +23,11 @@ install Python from [python.org](https://www.python.org/downloads/) yourself.
 The window also prints a network address (e.g. `http://192.168.1.20:8501`) that colleagues on the
 same network can open. On Windows, allow the firewall prompt the first time.
 
-On the first visit you can **create the first user** or **load the demo project** (Online Store:
-4 epics, 10 features, 25 stories, 8 bugs, ~90 tasks, 6 sprints, 7 people).
+On the first visit you can **create the first user** or **load the demo project**: *Retail Data & AI*,
+a team building store performance dashboards, customer analytics (segmentation, churn, basket
+analysis), demand forecasting with ML and a data/MLOps platform (4 epics, 10 features, 25 stories,
+8 bugs, ~90 tasks, 6 sprints, 8 people in BI, data engineering, data science, ML engineering, data
+quality, design and product teams).
 
 Developers can still run it the usual way: `pip install -r requirements.txt` and `streamlit run app.py`.
 

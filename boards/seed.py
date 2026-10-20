@@ -1,4 +1,4 @@
-"""Demo data with simulated history, so burndown, velocity and cumulative flow have something to show."""
+"""Demo project (a retail data, dashboarding and AI/ML team) with simulated history."""
 
 import random
 from datetime import date, datetime, timedelta
@@ -11,123 +11,126 @@ from . import repository as repo
 USERS = [
     ("Ana Ferreira", "ana.ferreira@example.com", "Product"),
     ("Bruno Costa", "bruno.costa@example.com", "Product"),
-    ("Carla Mendes", "carla.mendes@example.com", "Web"),
-    ("Diogo Santos", "diogo.santos@example.com", "Mobile"),
-    ("Gonçalo Pereira", "goncalo.pereira@example.com", "Platform"),
-    ("Inês Rodrigues", "ines.rodrigues@example.com", "QA"),
+    ("Carla Mendes", "carla.mendes@example.com", "BI & Dashboards"),
+    ("Diogo Santos", "diogo.santos@example.com", "Data Engineering"),
+    ("Gonçalo Pereira", "goncalo.pereira@example.com", "Data Science"),
+    ("Marta Lopes", "marta.lopes@example.com", "ML Engineering"),
+    ("Inês Rodrigues", "ines.rodrigues@example.com", "Data Quality"),
     ("Filipe Almeida", "filipe.almeida@example.com", "Design"),
 ]
-DEVELOPERS = ["Carla Mendes", "Diogo Santos", "Gonçalo Pereira"]
-AREAS = ["Web", "Mobile", "API", "Infrastructure"]
+DEVELOPERS = ["Carla Mendes", "Diogo Santos", "Gonçalo Pereira", "Marta Lopes"]
+AREAS = ["BI & Dashboards", "Customer Analytics", "Data Science", "Data Platform"]
 GOALS = [
-    "Authentication and catalogue foundations",
-    "Invoices in the account area",
-    "Push notifications and instant payments",
-    "Checkout redesign and refunds",
-    "Offline mode and alerts",
-    "Stabilisation and end-to-end tests",
+    "Certified sales dataset and the first executive dashboard",
+    "Margin reporting and stock-out alerts",
+    "Customer segments and the first demand forecast",
+    "Mobile dashboard, basket analysis and promotion uplift",
+    "Churn score and late data feed alerts",
+    "Model monitoring and campaign measurement",
 ]
 
 # (epic, area, tags, [(feature, [(story, points, sprint offset | None, state in the current sprint)])])
 BACKLOG = [
-    ("Customer Portal", "Web", ["customer"], [
-        ("Authentication and account management", [
-            ("As a customer, I want to sign up with email and password", 5, -3, None),
-            ("As a customer, I want to reset my password by email", 3, -3, None),
-            ("As a customer, I want to sign in with Google", 5, -2, None),
-            ("As a customer, I want to enable two-factor authentication", 8, 0, "Active"),
+    ("Store Performance Dashboards", "BI & Dashboards", ["dashboards"], [
+        ("Executive sales dashboard", [
+            ("As a regional manager, I want daily sales vs. target per store", 5, -3, None),
+            ("As a regional manager, I want like-for-like growth compared with last year", 3, -3, None),
+            ("As a CFO, I want gross margin by category and region", 5, -2, None),
+            ("As a store manager, I want the sales dashboard on my phone", 8, 0, "Active"),
         ]),
-        ("Account area and invoices", [
-            ("As a customer, I want to see my invoice history", 5, -2, None),
-            ("As a customer, I want to download invoices as PDF", 3, -2, None),
-            ("As a customer, I want to update my billing details", 3, 0, "Closed"),
+        ("Inventory and stock-out reporting", [
+            ("As a merchandiser, I want stock cover in days per SKU and store", 5, -2, None),
+            ("As a merchandiser, I want a daily list of likely stock-outs", 3, -2, None),
+            ("As a supply planner, I want inventory value ageing per warehouse", 3, 0, "Closed"),
         ]),
-        ("Search and catalogue", [
-            ("As a visitor, I want to search products by name", 5, -3, None),
-            ("As a visitor, I want to filter products by category and price", 8, 1, None),
-            ("As a visitor, I want to see related products", 5, None, None),
-        ]),
-    ]),
-    ("Mobile App v2", "Mobile", ["mobile"], [
-        ("Push notifications", [
-            ("As a user, I want a notification when my order status changes", 8, -1, None),
-            ("As a user, I want to configure my notification preferences", 3, -1, None),
-        ]),
-        ("Offline mode", [
-            ("As a user, I want to see my orders without a connection", 8, 1, None),
-            ("As a user, I want my changes to sync when I am back online", 13, 2, None),
-        ]),
-        ("Checkout redesign", [
-            ("As a user, I want a 3-step checkout", 8, 0, "Resolved"),
-            ("As a user, I want to save favourite addresses", 3, 0, "Closed"),
-            ("As a user, I want to pay with Apple Pay or Google Pay", 5, 0, "New"),
+        ("Self-service analytics", [
+            ("As an analyst, I want a certified sales dataset in the BI tool", 5, -3, None),
+            ("As an analyst, I want row-level security by region", 8, 1, None),
+            ("As a business user, I want to ask questions about sales in plain language", 5, None, None),
         ]),
     ]),
-    ("Payments Platform", "API", ["payments"], [
-        ("Instant bank payments", [
-            ("As a customer, I want to pay with an instant bank transfer", 8, -1, None),
-            ("As an operator, I want payments to be reconciled automatically", 5, -1, None),
+    ("Customer Analytics", "Customer Analytics", ["customer"], [
+        ("Customer segmentation", [
+            ("As a CRM manager, I want RFM customer segments refreshed every week", 8, -1, None),
+            ("As a CRM manager, I want segment sizes and trends in a dashboard", 3, -1, None),
         ]),
-        ("Refunds", [
-            ("As an operator, I want to issue partial refunds", 5, 0, "Active"),
-            ("As a customer, I want to track the status of my refund", 3, 1, None),
+        ("Churn and loyalty", [
+            ("As a loyalty manager, I want a churn risk score for every member", 8, 1, None),
+            ("As a loyalty manager, I want to measure campaign uplift against a control group", 13, 2, None),
+        ]),
+        ("Basket analysis", [
+            ("As a category manager, I want to see products that are often bought together", 8, 0, "Resolved"),
+            ("As a category manager, I want basket size and value trends per store", 3, 0, "Closed"),
+            ("As a marketer, I want next-best-offer suggestions per segment", 5, 0, "New"),
         ]),
     ]),
-    ("Observability and Reliability", "Infrastructure", ["tech-debt"], [
-        ("Monitoring and alerts", [
-            ("As an engineer, I want latency dashboards per endpoint", 5, -3, None),
-            ("As an engineer, I want an alert when the error rate goes above 2%", 3, 1, None),
+    ("Demand Forecasting (ML)", "Data Science", ["ml"], [
+        ("Weekly demand forecast", [
+            ("As a supply planner, I want a 12-week demand forecast per SKU and store", 8, -1, None),
+            ("As a supply planner, I want forecast accuracy (MAPE) tracked per category", 5, -1, None),
         ]),
-        ("CI/CD pipeline", [
-            ("As a developer, I want automatic deployments to staging", 5, -2, None),
-            ("As a developer, I want end-to-end tests in the pipeline", 8, 2, None),
+        ("Promotions and pricing", [
+            ("As a pricing analyst, I want the expected uplift of a promotion before it runs", 5, 0, "Active"),
+            ("As a pricing analyst, I want price elasticity estimates per category", 3, 1, None),
+        ]),
+    ]),
+    ("Data Platform and MLOps", "Data Platform", ["platform"], [
+        ("Data pipelines", [
+            ("As a data engineer, I want POS transactions loaded every hour", 5, -3, None),
+            ("As a data engineer, I want an alert when a source feed is late or incomplete", 3, 1, None),
+        ]),
+        ("Model deployment and monitoring", [
+            ("As an ML engineer, I want models deployed through a CI/CD pipeline", 5, -2, None),
+            ("As an ML engineer, I want drift monitoring for models in production", 8, 2, None),
         ]),
     ]),
 ]
 
 # (title, feature, severity, sprint offset, state in the current sprint)
 BUGS = [
-    ("500 error when signing up with accented characters in the name", "Authentication and account management",
-     "2 - High", -2, None),
-    ("PDF invoices show the wrong date (time zone)", "Account area and invoices", "3 - Medium", -1, None),
-    ("Duplicate notifications on Android", "Push notifications", "2 - High", 0, "Active"),
-    ("Pay button rendered twice on small screens", "Checkout redesign", "3 - Medium", 0, "Closed"),
-    ("Search returns nothing for terms with hyphens", "Search and catalogue", "4 - Low", None, None),
-    ("Reconciliation times out with more than 1000 transactions", "Instant bank payments", "1 - Critical", 0, "New"),
-    ("App crashes when opened without a connection", "Offline mode", "2 - High", 1, None),
-    ("Notifications arrive twice on Android 14", "Push notifications", "3 - Medium", None, None),
+    ("Sales dashboard counts returns twice", "Executive sales dashboard", "2 - High", -2, None),
+    ("Stock cover shows negative days for new SKUs", "Inventory and stock-out reporting", "3 - Medium", -1, None),
+    ("RFM job fails when a customer has no purchases", "Customer segmentation", "2 - High", 0, "Active"),
+    ("Basket report ignores online orders", "Basket analysis", "3 - Medium", 0, "Closed"),
+    ("Plain-language questions return last year's figures", "Self-service analytics", "4 - Low", None, None),
+    ("Forecast pipeline times out for stores with over 20,000 SKUs", "Weekly demand forecast", "1 - Critical", 0,
+     "New"),
+    ("Hourly POS load duplicates rows after a retry", "Data pipelines", "2 - High", 1, None),
+    ("RFM refresh crashes on customers without orders", "Customer segmentation", "3 - Medium", None, None),
 ]
 
 # (item title, link kind seen from that item, other item title)
 LINKS = [
-    ("As a user, I want my changes to sync when I am back online", "predecessor",
-     "As a user, I want to see my orders without a connection"),
-    ("As a user, I want to pay with Apple Pay or Google Pay", "predecessor", "As a user, I want a 3-step checkout"),
-    ("Reconciliation times out with more than 1000 transactions", "related",
-     "As an operator, I want payments to be reconciled automatically"),
-    ("App crashes when opened without a connection", "related",
-     "As a user, I want to see my orders without a connection"),
-    ("Notifications arrive twice on Android 14", "duplicate_of", "Duplicate notifications on Android"),
-    ("As a customer, I want to track the status of my refund", "sibling",
-     "As a user, I want a notification when my order status changes"),
+    ("As a pricing analyst, I want the expected uplift of a promotion before it runs", "predecessor",
+     "As a supply planner, I want a 12-week demand forecast per SKU and store"),
+    ("As a marketer, I want next-best-offer suggestions per segment", "predecessor",
+     "As a category manager, I want to see products that are often bought together"),
+    ("Forecast pipeline times out for stores with over 20,000 SKUs", "related",
+     "As a data engineer, I want POS transactions loaded every hour"),
+    ("Hourly POS load duplicates rows after a retry", "related",
+     "As a data engineer, I want POS transactions loaded every hour"),
+    ("RFM refresh crashes on customers without orders", "duplicate_of",
+     "RFM job fails when a customer has no purchases"),
+    ("As an ML engineer, I want drift monitoring for models in production", "sibling",
+     "As a supply planner, I want forecast accuracy (MAPE) tracked per category"),
 ]
 
 TASK_TEMPLATES = [
-    ("UI design", "design", ["ux"]),
-    ("Implement API", "dev", ["backend"]),
-    ("Implement frontend", "dev", ["frontend"]),
-    ("Unit tests", "dev", []),
-    ("Acceptance tests", "qa", []),
-    ("Code review", "dev", []),
+    ("Wireframe and UX review", "design", ["ux"]),
+    ("Ingest source data", "dev", ["pipeline"]),
+    ("Transform and model the data", "dev", ["sql"]),
+    ("Build the report or model", "dev", []),
+    ("Data quality checks and UAT", "qa", ["data-quality"]),
+    ("Peer review and documentation", "dev", []),
 ]
 
 COMMENTS = [
-    "Checked with the customer, the acceptance criteria are final.",
-    "Blocked waiting for credentials for the test environment.",
-    "PR is open, only the review is missing.",
-    "Found an edge case with expired sessions, I will open a bug.",
-    "Could we split this into two stories?",
-    "Tested on staging, all good.",
+    "Reconciled the numbers with the finance close, they match.",
+    "Blocked: waiting for access to the loyalty data warehouse.",
+    "Notebook and PR are ready, only the review is missing.",
+    "Some stores send no POS file on Sundays, I will open a bug.",
+    "Could we split this into the data model and the visuals?",
+    "Showed it to two regional managers, the feedback was positive.",
 ]
 
 
@@ -150,7 +153,7 @@ def load_demo() -> None:
     with db.write() as conn:
         # Automation rules are off while simulating; parent states are computed at the end.
         for key, value in (("auto_activate_parent", "false"), ("auto_close_parent", "false"),
-                           ("project_name", '"Online Store"')):
+                           ("project_name", '"Retail Data & AI"')):
             repo._upsert(conn, db.settings, {"key": key, "value": value}, ["key"])
 
         created = stamp(now_dt - timedelta(days=60))
@@ -244,7 +247,7 @@ def load_demo() -> None:
             epic_id = create({"type": "Epic", "title": epic_title, "area_id": areas[area], "priority": 1,
                               "assigned_to": po, "business_value": rnd.randint(50, 100),
                               "effort": float(rnd.choice([40, 60, 80])),
-                              "description": f"Business goal: **{epic_title}**."}, po, epic_created, tags=epic_tags)
+                              "description": f"Business goal: **{epic_title}** for the retail business."}, po, epic_created, tags=epic_tags)
             for f_title, stories in features:
                 f_created = epic_created + timedelta(days=rnd.randint(1, 5))
                 fid = create({"type": "Feature", "title": f_title, "parent_id": epic_id, "area_id": areas[area],
@@ -258,15 +261,16 @@ def load_demo() -> None:
                     base_day = min(sprint["start"], today) if sprint else today
                     s_created = max(at(base_day - timedelta(days=rnd.randint(4, 20))), f_created + timedelta(hours=2))
                     owner = rnd.choice(devs)
-                    story_tags = rnd.sample(["frontend", "backend", "ux", "security", "performance", "mvp"],
+                    story_tags = rnd.sample(["sql", "python", "power-bi", "data-quality", "performance", "mvp"],
                                             rnd.randint(0, 2))
                     sid = create({
                         "type": "User Story", "title": s_title, "parent_id": fid, "area_id": areas[area],
                         "story_points": float(points), "priority": rnd.choice([1, 2, 2, 3, 4]),
                         "assigned_to": owner if sprint else None, "iteration_id": sprint["id"] if sprint else None,
-                        "description": f"{s_title}, so that the experience is simpler and faster.",
-                        "acceptance_criteria": "- Given I am signed in\n- When I perform the action\n"
-                                               "- Then I see a confirmation on screen",
+                        "description": f"{s_title}, so that decisions are based on reliable data.",
+                        "acceptance_criteria": "- Figures reconcile with the source system\n"
+                                               "- Data refreshes on schedule\n"
+                                               "- Documented in the data catalogue",
                     }, po, s_created, tags=story_tags + epic_tags)
                     ids_by_title[s_title] = sid
                     if sprint is None:
@@ -282,13 +286,14 @@ def load_demo() -> None:
             base_day = min(sprint["start"], today) if sprint else today
             b_created = at(base_day - timedelta(days=rnd.randint(1, 8)))
             owner = rnd.choice(devs)
-            bug_tags = tags + ["customer-reported"] if severity[0] in "12" else tags
+            bug_tags = tags + ["business-reported"] if severity[0] in "12" else tags
             bid = create({"type": "Bug", "title": b_title, "parent_id": fid, "area_id": area_id,
                           "severity": severity, "priority": int(severity[0]),
                           "story_points": float(rnd.choice([1, 2, 3])),
                           "assigned_to": owner if sprint else None, "iteration_id": sprint["id"] if sprint else None,
-                          "description": "1. Open the app\n2. Repeat the flow in the title\n"
-                                         "3. **Result:** error\n\n**Expected:** the flow finishes without errors"},
+                          "description": "1. Open the report or job\n2. Repeat what the title describes\n"
+                                         "3. **Result:** wrong figures or a failure\n\n"
+                                         "**Expected:** values match the source system"},
                          qa, b_created, tags=bug_tags)
             ids_by_title[b_title] = bid
             if sprint is None:
