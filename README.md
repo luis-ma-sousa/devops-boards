@@ -1,12 +1,17 @@
 # Boards: an Azure DevOps Boards clone in Streamlit
 
+[![tests](https://github.com/luis-ma-sousa/devops-boards/actions/workflows/tests.yml/badge.svg)](https://github.com/luis-ma-sousa/devops-boards/actions/workflows/tests.yml)
+![Windows | macOS | Linux](https://img.shields.io/badge/runs%20on-Windows%20%7C%20macOS%20%7C%20Linux-0078D4)
+![License: MIT](https://img.shields.io/badge/license-MIT-green)
+
 Agile work tracking with **Epics → Features → User Stories / Bugs → Tasks**, drag-and-drop Kanban
 boards, hierarchical backlogs, sprints with a taskboard, capacity and burndown, links between work
 items and a personal home page. Built for several people working at the same time.
 
 ## Run it (Windows, macOS, Linux)
 
-1. Download the project: **Code → Download ZIP** on GitHub (then unzip), or `git clone` it.
+1. Download the project: [**Download ZIP**](https://github.com/luis-ma-sousa/devops-boards/archive/refs/heads/main.zip)
+   (then unzip it), or `git clone https://github.com/luis-ma-sousa/devops-boards.git`.
 2. Start it:
    - **Windows**: double-click `run.bat`.
    - **macOS**: double-click `run.command`. The first time macOS may say it is from an unidentified
@@ -153,3 +158,7 @@ boards/
 views/                 one file per page
 tests/                 pytest suite
 ```
+
+## License
+
+[MIT](LICENSE) © 2026 Luis Sousa

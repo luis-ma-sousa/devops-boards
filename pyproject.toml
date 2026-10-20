@@ -2,7 +2,13 @@
 name = "devops-boards"
 version = "1.0.0"
 description = "A simplified Azure DevOps Boards clone built with Streamlit"
+readme = "README.md"
+license = "MIT"
+authors = [{ name = "Luis Sousa" }]
 requires-python = ">=3.11"
+
+[project.urls]
+Repository = "https://github.com/luis-ma-sousa/devops-boards"
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
