@@ -238,7 +238,8 @@ def database_url() -> str:
             if url.startswith(prefix):
                 return "postgresql+psycopg://" + url[len(prefix):]
         return url
-    return f"sqlite:///{os.environ.get('BOARDS_DB', DEFAULT_SQLITE_PATH)}"
+    path = Path(os.environ.get("BOARDS_DB") or DEFAULT_SQLITE_PATH).expanduser().resolve()
+    return f"sqlite:///{path.as_posix()}"  # forward slashes work on Windows too
 
 
 def safe_url(url: str | None = None) -> str:

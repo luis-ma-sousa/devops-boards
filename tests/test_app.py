@@ -68,3 +68,12 @@ def test_card_payload_is_plain_data(user, make_item):
     assert card["allowed"] == config.STATES["User Story"]
     assert card["meta"][0] == "SP 3" and "<b>Parent</b>" in card["meta"][-1]
     assert card["tags"] == ["a"]
+
+
+def test_selected_user_survives_a_reload(sqlite_only, user, other_user):
+    at = AppTest.from_file(APP, default_timeout=60)
+    at.query_params["user"] = str(other_user)
+    at.run()
+    assert not at.exception
+    assert at.sidebar.selectbox[0].value == other_user
+    assert at.title[0].value.startswith(("Good morning, Bob", "Good afternoon, Bob", "Good evening, Bob"))

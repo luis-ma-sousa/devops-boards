@@ -55,5 +55,5 @@ ui.item_table(table, "queries", height=min(700, 38 + 35 * max(len(table), 1)), c
     "Created": st.column_config.DatetimeColumn(format="YYYY-MM-DD HH:mm"),
     "Updated": st.column_config.DatetimeColumn(format="YYYY-MM-DD HH:mm"),
 })
-st.download_button("Export CSV", table.to_csv(index=False).encode("utf-8"), "work_items.csv", "text/csv",
+st.download_button("Export CSV", table.to_csv(index=False).encode("utf-8-sig"), "work_items.csv", "text/csv",
                    icon=":material/download:")

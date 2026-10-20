@@ -1,10 +1,10 @@
-"""Metrics: burndown, velocity, cumulative flow and flow times.
+"""Sprint metrics: burndown, velocity (for planning) and epic progress.
 
 The value of a field on a past day is rebuilt from the ``history`` table: the value at time T
 is the ``old_value`` of the first change after T, or the current value if nothing changed since.
 """
 
-from datetime import date, datetime, timedelta
+from datetime import date, timedelta
 
 import pandas as pd
 
@@ -94,34 +94,6 @@ def velocity(items: pd.DataFrame, iterations: pd.DataFrame, today: date | None =
         rows.append({"iteration": it.name, "order": it.start_date, "status": "Incomplete",
                      "points": float(points.sum()) - done})
     return pd.DataFrame(rows, columns=["iteration", "order", "status", "points"])
-
-
-def cumulative_flow(items: pd.DataFrame, history: pd.DataFrame, types, days: int = 30,
-                    today: date | None = None) -> pd.DataFrame:
-    today = today or date.today()
-    scope = items[items["type"].isin(types)]
-    rows = []
-    for offset in range(days - 1, -1, -1):
-        day = today - timedelta(days=offset)
-        states = field_as_of(scope, history, "state", _ts(day))
-        counts = states.value_counts()
-        for state in config.BOARD_COLUMNS:
-            rows.append({"date": pd.Timestamp(day), "state": state, "count": int(counts.get(state, 0))})
-    return pd.DataFrame(rows)
-
-
-def flow_times(items: pd.DataFrame, days: int = 30, today: date | None = None) -> pd.DataFrame:
-    """Lead time (created → closed) and cycle time (activated → closed), in days, of recently closed items."""
-    today = today or date.today()
-    since = (datetime.combine(today, datetime.min.time()) - timedelta(days=days)).strftime("%Y-%m-%d")
-    closed = items[(items["state"] == "Closed") & items["closed_at"].notna()
-                   & (items["closed_at"] >= since) & items["type"].isin(REQUIREMENT_TYPES)].copy()
-    if closed.empty:
-        return pd.DataFrame(columns=["id", "type", "title", "closed_at", "lead_time", "cycle_time"])
-    closed_at = pd.to_datetime(closed["closed_at"])
-    closed["lead_time"] = (closed_at - pd.to_datetime(closed["created_at"])).dt.total_seconds() / 86400
-    closed["cycle_time"] = (closed_at - pd.to_datetime(closed["activated_at"])).dt.total_seconds() / 86400
-    return closed[["id", "type", "title", "closed_at", "lead_time", "cycle_time"]]
 
 
 def rollup_progress(items: pd.DataFrame, parent_type: str) -> pd.DataFrame:

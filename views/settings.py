@@ -262,7 +262,7 @@ with tab_data:
                            "application/x-sqlite3", icon=":material/database:", on_click="ignore")
     c2.download_button("Export everything (JSON)", db.export_json, "boards-export.json", "application/json",
                        icon=":material/data_object:", on_click="ignore")
-    c3.download_button("Export work items (CSV)", lambda: repo.load_work_items().to_csv(index=False).encode("utf-8"),
+    c3.download_button("Export work items (CSV)", lambda: repo.load_work_items().to_csv(index=False).encode("utf-8-sig"),
                        "work_items.csv", "text/csv", icon=":material/download:", on_click="ignore")
 
     st.divider()

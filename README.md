@@ -2,32 +2,42 @@
 
 Agile work tracking with **Epics → Features → User Stories / Bugs → Tasks**, drag-and-drop Kanban
 boards, hierarchical backlogs, sprints with a taskboard, capacity and burndown, links between work
-items and an overview dashboard. Built for several people working at the same time.
+items and a personal home page. Built for several people working at the same time.
 
-## Quick start
+## Run it (Windows, macOS, Linux)
 
-```bash
-git clone https://github.com/<you>/devops-boards.git
-cd devops-boards
-python -m venv .venv && source .venv/bin/activate     # or: uv venv && source .venv/bin/activate
-pip install -r requirements.txt
-streamlit run app.py
-```
+1. Download the project: **Code → Download ZIP** on GitHub (then unzip), or `git clone` it.
+2. Start it:
+   - **Windows**: double-click `run.bat`.
+   - **macOS**: double-click `run.command`. The first time macOS may say it is from an unidentified
+     developer: right-click the file → **Open** → **Open**.
+   - **Linux** (or a Mac terminal): `bash run.sh`
+3. The browser opens on the app. Keep the window open while you use it; close it (or press Ctrl+C)
+   to stop.
 
-Open <http://localhost:8501>. On the first run you can **create the first user** or **load the demo
-project** (Online Store: 4 epics, 10 features, 25 stories, 8 bugs, ~90 tasks, 6 sprints, 7 people and
-simulated history, so the charts have data).
+The first start takes about a minute: it creates a private Python environment in `.venv` and
+installs what the app needs. Later starts take a few seconds. If Python 3.11+ is not installed, the
+script offers to set it up with [uv](https://astral.sh/uv) (no admin rights needed); you can also
+install Python from [python.org](https://www.python.org/downloads/) yourself.
+
+The window also prints a network address (e.g. `http://192.168.1.20:8501`) that colleagues on the
+same network can open. On Windows, allow the firewall prompt the first time.
+
+On the first visit you can **create the first user** or **load the demo project** (Online Store:
+4 epics, 10 features, 25 stories, 8 bugs, ~90 tasks, 6 sprints, 7 people).
+
+Developers can still run it the usual way: `pip install -r requirements.txt` and `streamlit run app.py`.
 
 ## Features
 
 | Page | What it does |
 |---|---|
-| **Overview** | KPIs (open, in progress, bugs, lead and cycle time), sprint burndown, velocity, cumulative flow, open work per person, epic progress, recent activity |
+| **Home** | Your own work (in progress, up next, done this week), the current sprint and your part in it, project progress per epic, and updates teammates made on your items |
 | **Boards** | Kanban per backlog level (Epics / Features / Stories) with New → Active → Resolved → Closed columns. **Drag cards** between columns or within a column, click a card to open it, WIP limits, filters (text, person, team, iteration, area, tags) |
 | **Backlogs** | Ordered list with the hierarchy (show children), reorder (up/down/top), bulk actions (iteration, state, person) and **grid editing** |
 | **Sprints** | Taskboard (one row per story, **drag tasks** between states or to another story), sprint backlog, capacity per person, burndown (points, hours or items) and planning (move items between backlog and sprint, with a velocity warning) |
 | **Work items** | Queries with quick views (assigned to me, created by me…), every filter and CSV export |
-| **People** | Create, edit and deactivate people (name, email and a free-text **team**), workload per person and per team |
+| **People** | Create, edit and deactivate people (name, email and a free-text **team**) and see who is in each team |
 | **Settings** | Project name, automation rules, strict hierarchy, iterations (including generating several sprints), areas, tags, WIP limits, recycle bin, integrity check, backups and exports |
 
 ### Work items
@@ -60,7 +70,8 @@ remaining work to 0.
 
 ## Several people at the same time
 
-There is no login: everyone picks who they are in the sidebar ("Working as").
+There is no login: everyone picks who they are in the sidebar ("Working as"). The choice is kept in
+the address (`?user=3`), so a bookmark opens the app as that person.
 
 - **Conflicts are detected, not overwritten.** The edit form only saves the fields you changed. If
   someone else changed the *same* field after you opened the item, you get a warning and can reload
@@ -115,19 +126,23 @@ The suite (over 200 tests per database) covers:
   many threads (creates, moves, sign-ups with the same email, tags with different case, comments).
 - **Database integrity**: constraints hold for rows written directly, foreign keys, rollback on
   crashes mid-transaction, schema versioning, backups, exports, integrity report.
-- **App**: every page renders with demo data and with an empty project; user text is escaped.
+- **App**: every page renders with demo data and with an empty project; user text is escaped; the
+  selected person survives a reload.
 
-GitHub Actions runs everything on SQLite and PostgreSQL for every push.
+GitHub Actions runs the tests on Windows, macOS and Linux (SQLite) and on PostgreSQL, and starts the
+app with `run.bat` / `run.sh` on all three systems, for every push.
 
 ## Project structure
 
 ```
+run.bat / run.command / run.sh   double-click launchers (Windows / macOS / Linux)
+launch.py              cross-platform launcher: sets up .venv, installs, starts, opens the browser
 app.py                 navigation, sidebar, onboarding
 boards/
   config.py            types, states, hierarchy, link types, colours, fields
   db.py                engine, schema, transactions, integrity check, backups
   repository.py        data access, validation, conflicts, links, automation rules
-  analytics.py         burndown, velocity, cumulative flow, lead/cycle time
+  analytics.py         sprint burndown, velocity (planning hint), epic progress
   charts.py            Altair charts that follow the light/dark theme
   kanban.py            drag-and-drop board (Streamlit v2 component, no dependencies)
   ui.py                formatting, filters, work item dialogs

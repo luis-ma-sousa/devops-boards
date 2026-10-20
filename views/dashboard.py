@@ -1,11 +1,14 @@
+"""Home: what matters to the person using the app right now."""
+
 from datetime import date, datetime, timedelta
 
-import pandas as pd
 import streamlit as st
 
 from boards import analytics as an
-from boards import charts, config, ui
+from boards import config, ui
 from boards import repository as repo
+
+MAX_PER_COLUMN = 8
 
 
 def ago(ts: str) -> str:
@@ -20,139 +23,128 @@ def ago(ts: str) -> str:
     return f"{delta.days} day{'s' if delta.days > 1 else ''} ago"
 
 
+def greeting() -> str:
+    hour = datetime.now().hour
+    return "Good morning" if hour < 12 else "Good afternoon" if hour < 18 else "Good evening"
+
+
+def item_list(rows, key: str, empty: str) -> None:
+    if rows.empty:
+        st.caption(empty)
+        return
+    for row in rows.head(MAX_PER_COLUMN).to_dict("records"):
+        details = [row["state"]]
+        if not ui.blank(row.get("iteration_name")):
+            details.append(row["iteration_name"])
+        if not ui.blank(row.get("parent_title")):
+            details.append(f"{ui.icon(row['parent_type'])} {row['parent_title']}")
+        with st.container(gap=None):
+            st.button(f"{ui.icon(row['type'])} {row['id']} · {ui.md_escape(row['title'])}", key=f"{key}_{row['id']}",
+                      type="tertiary", on_click=ui.open_item, args=(row["id"],))
+            st.caption(" · ".join(ui.md_escape(d) for d in details))
+    if len(rows) > MAX_PER_COLUMN:
+        st.caption(f"+{len(rows) - MAX_PER_COLUMN} more in Work items → Assigned to me")
+
+
+me = ui.uid()
+users = repo.list_users().set_index("id")
+my_name = users.loc[me, "name"] if me in users.index else ""
 items = repo.load_work_items()
-st.title(f"{repo.get_setting('project_name')} · Overview")
+
+st.title(f"{greeting()}, {my_name.split()[0] if my_name else 'there'} 👋")
+st.caption(f"{repo.get_setting('project_name')} · {date.today():%A, %d %B}")
 ui.live_updates("dashboard")
 
+with st.container(horizontal=True, gap="small"):
+    st.button("New work item", icon=":material/add:", type="primary", on_click=ui.open_new)
+    st.page_link("views/board.py", label="Board", icon=":material/view_kanban:")
+    st.page_link("views/backlog.py", label="Backlog", icon=":material/format_list_bulleted:")
+    st.page_link("views/sprints.py", label="Sprint", icon=":material/directions_run:")
+
 if items.empty:
-    st.info("There are no work items yet. Start by creating an Epic or a User Story.")
-    st.button("Create work item", icon=":material/add:", type="primary", on_click=ui.open_new, args=("Epic",))
+    st.info("There are no work items yet. Start by creating an Epic or a User Story.", icon="🌱")
     st.stop()
 
-history = repo.load_history(["state", "story_points", "remaining_work"])
-iterations = repo.list_iterations()
-current = repo.current_iteration(iterations)
-today = date.today()
+# --- My work ---------------------------------------------------------------------------------------------
+st.subheader("My work")
+mine = items[(items["assigned_to"] == me).fillna(False).astype(bool)]
+week_ago = (datetime.now() - timedelta(days=7)).strftime("%Y-%m-%d %H:%M:%S")
+todo = mine[mine["state"] == "New"]
+doing = mine[mine["state"].isin(["Active", "Resolved"])]
+done = mine[(mine["state"] == "Closed") & (mine["closed_at"].fillna("") >= week_ago)].sort_values(
+    "closed_at", ascending=False)
 
-# --- KPIs ----------------------------------------------------------------------------------------------
-reqs = items[items["type"].isin(an.REQUIREMENT_TYPES)]
-open_reqs = reqs[~reqs["state"].isin(config.INACTIVE_STATES)]
-in_progress = open_reqs[open_reqs["state"].isin(["Active", "Resolved"])]
-open_bugs = items[(items["type"] == "Bug") & ~items["state"].isin(config.INACTIVE_STATES)]
-week_ago = (today - timedelta(days=7)).isoformat()
-new_bugs = int((items["type"].eq("Bug") & (items["created_at"] >= week_ago)).sum())
-since = (today - timedelta(days=13)).isoformat()
-closed_recent = int((reqs["state"].eq("Closed") & (reqs["closed_at"].fillna("") >= since)).sum())
-flow = an.flow_times(items, days=30)
+if mine.empty:
+    st.info("Nothing is assigned to you yet. Pick something from the backlog or the board.", icon="🙌")
+else:
+    c1, c2, c3 = st.columns(3, gap="medium")
+    with c1, st.container(border=True):
+        st.markdown(f"**In progress** · {len(doing)}")
+        item_list(doing, "doing", "Nothing in progress.")
+    with c2, st.container(border=True):
+        st.markdown(f"**Up next** · {len(todo)}")
+        item_list(todo, "todo", "Nothing waiting for you.")
+    with c3, st.container(border=True):
+        st.markdown(f"**Done this week** · {len(done)}")
+        item_list(done, "done", "Nothing closed this week yet.")
 
-k = st.columns(6)
-k[0].metric("Open", len(open_reqs), border=True, help="User Stories and Bugs not closed")
-k[1].metric("In progress", len(in_progress), border=True, help="Active or Resolved")
-k[2].metric("Open bugs", len(open_bugs), delta=f"{new_bugs} new (7 days)" if new_bugs else None,
-            delta_color="inverse", border=True)
-k[3].metric("Closed (14 days)", closed_recent, border=True, help="User Stories and Bugs closed")
-k[4].metric("Lead time", f"{flow['lead_time'].mean():.1f} d" if not flow.empty else "—", border=True,
-            help="Average from creation to close (items closed in the last 30 days)")
-k[5].metric("Cycle time", f"{flow['cycle_time'].mean():.1f} d" if not flow.empty else "—", border=True,
-            help="Average from activation to close (items closed in the last 30 days)")
+# --- Sprint and updates -------------------------------------------------------------------------------------
+left, right = st.columns([1, 1], gap="medium")
 
-# --- Current sprint -----------------------------------------------------------------------------------------
-if current:
-    sprint_items = items[items["iteration_id"] == current["id"]]
-    sprint_reqs = sprint_items[sprint_items["type"].isin(an.REQUIREMENT_TYPES) & (sprint_items["state"] != "Removed")]
-    total_pts = float(sprint_reqs["story_points"].fillna(0).sum())
-    done_pts = float(sprint_reqs.loc[sprint_reqs["state"] == "Closed", "story_points"].fillna(0).sum())
-    days = an.working_days(current["start_date"], current["end_date"])
-    left = len([d for d in days if d >= today]) if current["start_date"] <= today else len(days)
-    st.subheader(f"🗓 {current['name']}")
-    st.caption(f"{current['start_date']:%d %b} – {current['end_date']:%d %b} · {left} working days left"
-               + (f" · Goal: {current['goal']}" if current.get("goal") else ""))
-    st.progress(done_pts / total_pts if total_pts else 0.0, text=f"{done_pts:.0f} of {total_pts:.0f} Story Points done")
-
-c1, c2 = st.columns(2, gap="medium")
-with c1, st.container(border=True):
-    st.markdown("**Sprint burndown**")
-    if current:
-        metric = st.segmented_control("Metric", ["Story Points", "Remaining hours", "Items"], default="Story Points",
-                                      key="dash_bd_metric", label_visibility="collapsed", required=True)
-        key = {"Story Points": "points", "Remaining hours": "hours", "Items": "count"}[metric]
-        bd = an.burndown(items, history, current, key)
-        if bd.empty or not (bd["series"] == "Remaining").any():
-            st.caption("The sprint has not started yet.")
-        else:
-            st.altair_chart(charts.burndown_chart(bd, metric), width="stretch")
+with left:
+    st.subheader("This sprint")
+    current = repo.current_iteration()
+    if not current:
+        st.caption("No sprint planned yet. Create one in Settings → Iterations.")
     else:
-        st.caption("Create an iteration with dates to see the burndown.")
+        sprint = items[(items["iteration_id"] == current["id"]) & items["type"].isin(an.REQUIREMENT_TYPES)
+                       & (items["state"] != "Removed")]
+        closed = int((sprint["state"] == "Closed").sum())
+        days = an.working_days(current["start_date"], current["end_date"])
+        left_days = len([d for d in days if d >= date.today()])
+        with st.container(border=True):
+            st.markdown(f"**{ui.md_escape(current['name'])}** · {current['start_date']:%d %b} – "
+                        f"{current['end_date']:%d %b} · {left_days} working day{'s' if left_days != 1 else ''} left")
+            if current.get("goal"):
+                st.markdown(f"🎯 {ui.md_escape(current['goal'])}")
+            st.progress(closed / len(sprint) if len(sprint) else 0.0,
+                        text=f"{closed} of {len(sprint)} stories and bugs done")
+            my_sprint = sprint[(sprint["assigned_to"] == me).fillna(False).astype(bool)]
+            if not my_sprint.empty:
+                st.caption(f"Yours: {int((my_sprint['state'] == 'Closed').sum())} of {len(my_sprint)} done")
+            st.page_link("views/sprints.py", label="Open the taskboard", icon=":material/arrow_forward:")
 
-with c2, st.container(border=True):
-    st.markdown("**Velocity**")
-    vel = an.velocity(items, iterations)
-    if vel.empty:
-        st.caption("No iteration has started yet.")
-    else:
-        st.altair_chart(charts.velocity_chart(vel), width="stretch")
-        past = vel[(vel["status"] == "Completed") & (vel["iteration"] != (current or {}).get("name"))]
-        if not past.empty:
-            st.caption(f"Average of previous iterations: **{past['points'].mean():.1f}** points")
-
-c1, c2 = st.columns(2, gap="medium")
-with c1, st.container(border=True):
-    st.markdown("**Cumulative flow (30 days)**")
-    level = st.segmented_control("Level", list(config.BACKLOG_LEVELS), default="Stories", key="dash_cfd_level",
-                                 label_visibility="collapsed", required=True)
-    cfd = an.cumulative_flow(items, history, config.BACKLOG_LEVELS[level], days=30)
-    st.altair_chart(charts.cfd_chart(cfd), width="stretch")
-
-with c2, st.container(border=True):
-    st.markdown("**Open work per person**")
-    scope = items[~items["state"].isin(config.INACTIVE_STATES) & items["type"].isin(["User Story", "Bug", "Task"])]
-    by_person = (scope.assign(person=scope["assigned_name"].fillna("Unassigned"))
-                 .groupby(["person", "state"]).size().reset_index(name="count"))
-    if by_person.empty:
-        st.caption("Nothing open.")
-    else:
-        st.altair_chart(charts.stacked_by_state(by_person, "person", "Stories, bugs and tasks", height=300),
-                        width="stretch")
-
-c1, c2 = st.columns([3, 2], gap="medium")
-with c1, st.container(border=True):
-    st.markdown("**Epic progress**")
+    st.subheader("Project progress")
     progress = an.rollup_progress(items, "Epic")
     if progress.empty:
-        st.caption("No epics.")
+        st.caption("No epics yet.")
     else:
-        table = pd.DataFrame({
-            "ID": progress["id"],
-            "Epic": "👑 " + progress["title"],
-            "State": progress["state"],
-            "Stories": progress["done_items"].astype(str) + "/" + progress["items"].astype(str),
-            "Points": progress["done_points"].map("{:.0f}".format) + "/" + progress["points"].map("{:.0f}".format),
-            "Progress": progress["progress"],
-        })
-        ui.item_table(table, "dash_epics", column_config={
-            "ID": st.column_config.NumberColumn(width=50),
-            "State": st.column_config.TextColumn(width=70),
-            "Stories": st.column_config.TextColumn(width=60),
-            "Points": st.column_config.TextColumn(width=60),
-            "Progress": st.column_config.ProgressColumn(min_value=0, max_value=1, format="percent"),
-        })
-        st.caption("Select a row to open the epic.")
+        with st.container(border=True):
+            for row in progress.to_dict("records"):
+                st.button(f"👑 {ui.md_escape(row['title'])}", key=f"epic_{row['id']}", type="tertiary",
+                          on_click=ui.open_item, args=(row["id"],))
+                st.progress(float(row["progress"]), text=f"{row['done_items']} of {row['items']} done")
 
-with c2, st.container(border=True, height=420):
-    st.markdown("**Recent activity**")
-    activity = repo.recent_activity(25)
-    for row in activity.itertuples():
-        who = ui.md_escape(row.user_name or "Someone")
-        what = f"{ui.icon(row.type)} {row.item_id} {ui.md_escape(row.title)}"
-        if row.field == "created":
-            text = f"**{who}** created {what}"
-        elif row.field == "state":
-            text = f"**{who}** moved {what}: {row.old_value} → **{row.new_value}**"
-        elif row.field in ("deleted", "restored"):
-            text = f"**{who}** {row.field} {what}"
-        elif row.field == "links":
-            change = row.new_value or row.old_value or ""
-            text = f"**{who}** {'linked' if row.new_value else 'unlinked'} {what} ({ui.md_escape(change.split(':')[0])})"
-        else:
-            text = f"**{who}** changed *{config.FIELD_LABELS.get(row.field, row.field)}* on {what}"
-        st.markdown(f"{text}  \n:gray[{ago(row.changed_at)}]")
+with right:
+    st.subheader("Updates on your items")
+    updates = repo.updates_for_user(me, limit=15) if me else None
+    with st.container(border=True, height=520):
+        if updates is None or updates.empty:
+            st.caption("When teammates change or comment on your items, you will see it here.")
+        for row in (updates.to_dict("records") if updates is not None else []):
+            who = ui.md_escape(row["who"] or "Someone")
+            what = f"{ui.icon(row['type'])} {row['item_id']} {ui.md_escape(row['title'])}"
+            if row["kind"] == "comment":
+                body = row["body"] if len(row["body"]) <= 140 else row["body"][:137] + "…"
+                text = f"💬 **{who}** commented on {what}  \n> {ui.md_escape(body)}"
+            elif row["field"] == "state":
+                text = f"**{who}** moved {what} to **{row['new_value']}**"
+            elif row["field"] == "created":
+                text = f"**{who}** created {what}"
+            elif row["field"] == "links":
+                text = f"**{who}** {'linked' if row['new_value'] else 'unlinked'} {what}"
+            elif row["field"] in ("deleted", "restored"):
+                text = f"**{who}** {row['field']} {what}"
+            else:
+                text = f"**{who}** changed *{config.FIELD_LABELS.get(row['field'], row['field'])}* on {what}"
+            st.markdown(f"{text}  \n:gray[{ago(row['at'])}]")

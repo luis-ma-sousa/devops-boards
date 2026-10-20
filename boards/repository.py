@@ -673,6 +673,34 @@ def recent_activity(limit: int = 15) -> pd.DataFrame:
         """, {"limit": int(limit)})
 
 
+def updates_for_user(user_id: int, limit: int = 20) -> pd.DataFrame:
+    """Changes and comments made by *other people* on items assigned to or created by this user."""
+    params = {"u": user_id, "limit": int(limit)}
+    with db.read() as conn:
+        changes = _df(conn, """
+            SELECT h.changed_at AS at, u.name AS who, 'change' AS kind, h.field, h.old_value, h.new_value,
+                   w.id AS item_id, w.type, w.title, NULL AS body
+            FROM history h
+            JOIN work_items w ON w.id = h.work_item_id AND w.deleted_at IS NULL
+            LEFT JOIN users u ON u.id = h.user_id
+            WHERE (w.assigned_to = :u OR w.created_by = :u) AND (h.user_id IS NULL OR h.user_id <> :u)
+            ORDER BY h.changed_at DESC, h.id DESC LIMIT :limit
+        """, params)
+        notes = _df(conn, """
+            SELECT c.created_at AS at, u.name AS who, 'comment' AS kind, NULL AS field, NULL AS old_value,
+                   NULL AS new_value, w.id AS item_id, w.type, w.title, c.body
+            FROM comments c
+            JOIN work_items w ON w.id = c.work_item_id AND w.deleted_at IS NULL
+            LEFT JOIN users u ON u.id = c.user_id
+            WHERE (w.assigned_to = :u OR w.created_by = :u) AND (c.user_id IS NULL OR c.user_id <> :u)
+            ORDER BY c.created_at DESC, c.id DESC LIMIT :limit
+        """, params)
+    frames = [f for f in (changes, notes) if not f.empty]
+    if not frames:
+        return changes
+    return pd.concat(frames, ignore_index=True).sort_values("at", ascending=False).head(limit)
+
+
 def data_version() -> str:
     """Cheap fingerprint that changes whenever work items, links or comments change."""
     with db.read() as conn:

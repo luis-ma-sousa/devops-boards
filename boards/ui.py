@@ -14,6 +14,8 @@ from .errors import BoardsError, ConflictError
 CSS = """
 <style>
 .block-container { padding-top: 2.4rem; }
+button[data-testid="stBaseButton-tertiary"] { justify-content: flex-start; text-align: left; min-height: 0; }
+button[data-testid="stBaseButton-tertiary"] p { text-align: left; }
 .wi-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 12px; font-size: 0.82rem; }
 .wi-muted { opacity: 0.72; }
 .wi-avatar { display: inline-flex; align-items: center; justify-content: center; width: 20px; height: 20px;

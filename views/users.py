@@ -32,20 +32,17 @@ grid = pd.DataFrame({
     "Team": workload["team"],
     "Active": workload["active"].astype(bool),
     "Open items": workload["open_items"],
-    "Story Points": workload["open_points"],
-    "Remaining hours": workload["remaining_work"],
 })
 edited = st.data_editor(
     grid, hide_index=True, width="stretch", key="users_editor",
-    column_order=["Initials", "Name", "Email", "Team", "Active", "Open items", "Story Points", "Remaining hours"],
-    disabled=["Initials", "Open items", "Story Points", "Remaining hours"],
+    column_order=["Initials", "Name", "Email", "Team", "Active", "Open items"],
+    disabled=["Initials", "Open items"],
     column_config={
         "Initials": st.column_config.TextColumn(" ", width=50),
         "Name": st.column_config.TextColumn(required=True, max_chars=config.MAX_NAME),
         "Email": st.column_config.TextColumn(required=True, max_chars=254),
         "Team": st.column_config.TextColumn(max_chars=config.MAX_NAME),
-        "Story Points": st.column_config.NumberColumn(format="%.0f"),
-        "Remaining hours": st.column_config.NumberColumn(format="%.1f h"),
+        "Open items": st.column_config.NumberColumn(help="Work items assigned and not closed"),
     },
 )
 
@@ -83,23 +80,12 @@ with c2.popover("Delete person", icon=":material/person_remove:"):
                 ui.flash(str(exc), "⚠️")
             st.rerun()
 
-st.subheader("Open workload")
-active = workload[workload["active"] == 1]
-c1, c2 = st.columns(2)
-with c1:
-    st.markdown("**Open Story Points**")
-    st.bar_chart(active.set_index("name")["open_points"], horizontal=True, x_label="Story Points", y_label="",
-                 height=280)
-with c2:
-    st.markdown("**Remaining task hours**")
-    st.bar_chart(active.set_index("name")["remaining_work"], horizontal=True, x_label="Hours", y_label="",
-                 height=280)
-
-teams = workload[workload["team"] != ""].groupby("team").agg(
-    people=("id", "size"), open_items=("open_items", "sum"), open_points=("open_points", "sum"),
-    remaining_hours=("remaining_work", "sum")).reset_index()
-if not teams.empty:
-    st.subheader("Teams")
-    st.dataframe(teams.rename(columns={"team": "Team", "people": "People", "open_items": "Open items",
-                                       "open_points": "Story Points", "remaining_hours": "Remaining hours"}),
-                 hide_index=True, width="stretch")
+st.subheader("Teams")
+members = workload[workload["active"] == 1]
+teams = members.assign(team=members["team"].replace("", "No team")).groupby("team")["name"].agg(list)
+if teams.empty:
+    st.caption("Nobody has a team yet. Type one in the Team column above.")
+for team, names in sorted(teams.items(), key=lambda kv: kv[0].lower()):
+    with st.container(border=True):
+        st.markdown(f"**{ui.md_escape(team)}** · {len(names)} {'person' if len(names) == 1 else 'people'}")
+        st.html('<div class="wi-meta">' + "".join(f"<span>{ui.person(n)}</span>" for n in sorted(names)) + "</div>")

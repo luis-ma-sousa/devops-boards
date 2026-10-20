@@ -60,11 +60,16 @@ def sidebar() -> None:
     if users.empty:
         users = repo.list_users()
     names = {int(r.id): f"{r.name} · {r.team}" if r.team else r.name for r in users.itertuples()}
+    # Remember who is using this browser tab in the address (?user=3), so reloads and bookmarks keep it.
+    from_url = st.query_params.get("user", "")
+    if "user_id" not in st.session_state and from_url.isdigit() and int(from_url) in names:
+        st.session_state["user_id"] = int(from_url)
     if st.session_state.get("user_id") not in names:
         st.session_state["user_id"] = next(iter(names))
     with st.sidebar:
         st.markdown(f"#### 🗂️ {ui.md_escape(repo.get_setting('project_name'))}")
         st.selectbox("Working as", list(names), format_func=names.get, key="user_id")
+        st.query_params["user"] = str(st.session_state["user_id"])
         st.button("New work item", icon=":material/add:", type="primary", width="stretch", on_click=ui.open_new)
         with st.form("goto", border=False, clear_on_submit=True):
             c1, c2 = st.columns([3, 1], vertical_alignment="bottom")
@@ -82,7 +87,7 @@ if repo.user_count() == 0:
 
 pages = {
     "Project": [
-        st.Page("views/dashboard.py", title="Overview", icon=":material/dashboard:", default=True),
+        st.Page("views/dashboard.py", title="Home", icon=":material/home:", default=True),
     ],
     "Boards": [
         st.Page("views/board.py", title="Boards", icon=":material/view_kanban:"),

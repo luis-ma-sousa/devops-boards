@@ -336,3 +336,20 @@ def test_move_item_changes_state_and_order_atomically(user, make_item):
     items = repo.load_work_items().set_index("id")
     assert items.loc[a, "state"] == "Active"
     assert items.loc[b, "backlog_rank"] < items.loc[a, "backlog_rank"]
+
+
+# --- home page ------------------------------------------------------------------------------------------
+
+
+def test_updates_for_user_shows_other_peoples_changes_only(user, other_user, make_item):
+    mine = make_item(assigned_to=user)
+    theirs = make_item(by=other_user, assigned_to=other_user)
+    repo.update_work_item(mine, {"priority": 1}, user)                 # my own change: hidden
+    repo.change_state(mine, "Active", other_user)                      # someone else's change: shown
+    repo.add_comment(mine, other_user, "Picked this up with you")      # someone else's comment: shown
+    repo.change_state(theirs, "Active", other_user)                    # not my item: hidden
+    updates = repo.updates_for_user(user)
+    assert set(updates["item_id"]) == {mine}
+    assert set(updates["kind"]) == {"change", "comment"}
+    assert "priority" not in set(updates["field"].dropna())
+    assert repo.updates_for_user(user, limit=1).shape[0] == 1

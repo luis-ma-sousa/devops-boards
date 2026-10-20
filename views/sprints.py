@@ -65,15 +65,10 @@ if it.get("goal"):
     st.markdown(f"🎯 **Goal:** {ui.md_escape(it['goal'])}")
 total_pts = float(reqs["story_points"].fillna(0).sum())
 done_pts = float(reqs.loc[reqs["state"] == "Closed", "story_points"].fillna(0).sum())
-remaining_h = float(tasks["remaining_work"].fillna(0).sum())
-m = st.columns(5)
-m[0].metric("Working days left", f"{len(remaining_days)} / {len(work_days)}" if work_days else "—", border=True)
-m[1].metric("Story Points", f"{done_pts:.0f} / {total_pts:.0f}", border=True, help="Done / planned")
-m[2].metric("Items done", f"{int((reqs['state'] == 'Closed').sum())} / {len(reqs)}", border=True)
-m[3].metric("Remaining work", f"{remaining_h:.0f} h", border=True, help="Sum of the tasks' remaining work")
-cap_left = float(capacity["left"].sum())
-m[4].metric("Capacity left", f"{cap_left:.0f} h", border=True,
-            delta=f"{cap_left - remaining_h:+.0f} h vs. work" if work_days else None, delta_color="normal")
+m = st.columns(3)
+m[0].metric("Working days left", f"{len(remaining_days)} of {len(work_days)}" if work_days else "—", border=True)
+m[1].metric("Stories and bugs done", f"{int((reqs['state'] == 'Closed').sum())} of {len(reqs)}", border=True)
+m[2].metric("Story Points done", f"{done_pts:.0f} of {total_pts:.0f}", border=True)
 
 tab_board, tab_backlog, tab_capacity, tab_burndown, tab_plan = st.tabs(
     ["Taskboard", "Sprint backlog", "Capacity", "Burndown", "Planning"], key="sprint_tab"
